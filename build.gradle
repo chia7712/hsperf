@@ -1,0 +1,21 @@
+group 'com.chia7712.myscala'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'scala'
+//apply plugin: 'idea'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+repositories {
+  mavenCentral()
+}
+
+//idea {
+//  module {
+//    inheritOutputDirs = true
+//  }
+//}
+
+dependencies {
+  compile 'org.scala-lang:scala-library:2.10.6'
+}
