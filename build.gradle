@@ -1,21 +1,31 @@
 group 'com.chia7712.myscala'
 version '1.0-SNAPSHOT'
 
+apply from: "$rootDir/gradle/dependencies.gradle"
 apply plugin: 'scala'
-//apply plugin: 'idea'
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
 repositories {
+  mavenLocal()
   mavenCentral()
 }
 
-//idea {
-//  module {
-//    inheritOutputDirs = true
-//  }
-//}
-
 dependencies {
-  compile 'org.scala-lang:scala-library:2.10.6'
+  compile 'org.scala-lang:scala-library:2.12.4'
+  compile libs.hbaseClient
+  compile libs.zookeeper
+  testCompile(libs.guava) {
+    force = true
+  }
+  testCompile libs.tomcat
+  testCompile libs.hbaseServer
+  testCompile libs.junit
+  testCompile libs.mockito
+  testCompile "$libs.hbaseServer:tests"
+  testCompile "$libs.hbaseHadoopCompat:tests"
+  testCompile "$libs.hbaseHadoop2Compat:tests"
+  testCompile "$libs.hadoopCommon:tests"
+  testCompile "$libs.hadoopHdfs:tests"
 }
