@@ -1,8 +1,5 @@
 package com.chia7712.myscala
 
-import org.apache.hadoop.hbase.{CellBuilderFactory, CellBuilderType}
-import org.apache.hadoop.hbase.util.Bytes
-
 trait Cell extends Ordered[Cell] {
   def key:Key
   def value:Array[Byte]
@@ -13,7 +10,7 @@ trait Cell extends Ordered[Cell] {
     }
   }
   override def compare(that:Cell) = key.compare(that.key)
-  override def toString = key.toString + "/" + Bytes.toStringBinary(value)
+  override def toString = key.toString + "/" + ByteUtil.toString(value)
 }
 object Cell {
   def apply(k:Key, v:Array[Byte]) = {

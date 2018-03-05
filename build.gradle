@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-  compile 'org.scala-lang:scala-library:2.12.4'
+  compile libs.scala
   compile libs.hbaseClient
   compile libs.zookeeper
   testCompile(libs.guava) {
@@ -28,4 +28,19 @@ dependencies {
   testCompile "$libs.hbaseHadoop2Compat:tests"
   testCompile "$libs.hadoopCommon:tests"
   testCompile "$libs.hadoopHdfs:tests"
+}
+
+task copyDeps(type: Copy) {
+    into "$buildDir/libs"
+    from configurations.compile
+}
+
+task copyTestDeps(type: Copy) {
+    into "$buildDir/test_libs"
+    from configurations.testCompile
+}
+
+clean.doFirst {
+    delete "${rootDir}/target"
+    delete "${rootDir}/out"
 }

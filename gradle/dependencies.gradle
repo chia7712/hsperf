@@ -11,8 +11,10 @@ versions["directory"] = project.hasProperty('directory.version') ? project.prope
 versions["junit"] = project.hasProperty('junit.version') ? project.properties['junit.version'] : "4.12"
 versions["tomcat"] = project.hasProperty('tomcat.version') ? project.properties['tomcat.version'] : "5.5.23"
 versions["mockito"] = project.hasProperty('mockito.version') ? project.properties['mockito.version'] : "1.10.19"
+versions["scala"] = project.hasProperty('scala.version') ? project.properties['scala.version'] : "2.12.4"
 
 libs += [
+  scala: "org.scala-lang:scala-library:$versions.scala",
   hbaseClient: "org.apache.hbase:hbase-client:$versions.hbase",
   hbaseServer: "org.apache.hbase:hbase-server:$versions.hbase",
   hbaseHadoopCompat: "org.apache.hbase:hbase-hadoop-compat:$versions.hbase",

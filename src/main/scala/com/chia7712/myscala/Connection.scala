@@ -2,15 +2,15 @@ package com.chia7712.myscala
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.client.{ColumnFamilyDescriptorBuilder, ConnectionFactory, Delete, Put, TableDescriptorBuilder}
-import org.apache.hadoop.hbase.{CellBuilderFactory, CellBuilderType, CellUtil, TableName}
+import org.apache.hadoop.hbase.{CellBuilderFactory, CellBuilderType, CellUtil, HBaseConfiguration, TableName}
 
 import scala.collection.JavaConverters._
-import scala.annotation.switch
 
 class Connection(config:Configuration) {
   private[this] val connection = ConnectionFactory.createConnection(config)
-  def createTable(name:TableName) = {
-    val table = connection.getTable(name)
+  def getTable(name:String) = {
+    val tableName = TableName.valueOf(name)
+    val table = connection.getTable(tableName)
     new Table() {
       override def put(cells: Cell*) = {
         val toHBaseCell = (c:Cell) => {
@@ -39,7 +39,7 @@ class Connection(config:Configuration) {
           .map(c => new Delete(CellUtil.cloneRow(c)).add(c)).asJava)
       }
 
-      override def deleteRow(row: Array[Byte]*) = {
+      override def deleteRow(row:Array[Byte]*) = {
         table.delete(row.map(new Delete(_)).asJava)
       }
 
@@ -48,26 +48,28 @@ class Connection(config:Configuration) {
       }
 
       override def close() = table.close()
+
+      override def tableName: String = name.toString
     }
   }
-  def recreateTable(name:TableName, cfs:String*) = {
+
+  def recreateTable(name:String, cfs:Array[Byte]*) = {
+    val tableName = TableName.valueOf(name)
     val admin = connection.getAdmin
     try {
-      (admin.tableExists(name): @switch) match {
-        case false => {
-          admin.disableTable(name)
-          admin.deleteTable(name)
-        }
-        case _ => {
-          val builder = TableDescriptorBuilder.newBuilder(name)
-          cfs.map(cf => ColumnFamilyDescriptorBuilder.of(cf))
-             .foreach(builder.addColumnFamily)
-          admin.createTable(builder.build())
-        }
+      if (admin.tableExists(tableName)) {
+        admin.disableTable(tableName)
+        admin.deleteTable(tableName)
       }
+      val builder = TableDescriptorBuilder.newBuilder(tableName)
+      cfs.map(ColumnFamilyDescriptorBuilder.of).foreach(builder.addColumnFamily)
+      admin.createTable(builder.build())
     } finally {
       admin.close()
     }
   }
   def close() = connection.close()
+}
+object Connection {
+  def apply(config: Configuration = HBaseConfiguration.create()) = new Connection(config)
 }
