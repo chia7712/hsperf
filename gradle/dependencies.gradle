@@ -8,12 +8,14 @@ versions["zookeeper"] = project.hasProperty('zookeeper.version') ? project.prope
 versions["hadoop"] = project.hasProperty('hadoop.version') ? project.properties['hadoop.version'] : "2.7.4"
 versions["guava"] = project.hasProperty('guava.version') ? project.properties['guava.version'] : "12.0.1"
 versions["directory"] = project.hasProperty('directory.version') ? project.properties['directory.version'] : "2.0.0-M15"
-versions["junit"] = project.hasProperty('junit.version') ? project.properties['junit.version'] : "4.12"
 versions["tomcat"] = project.hasProperty('tomcat.version') ? project.properties['tomcat.version'] : "5.5.23"
 versions["mockito"] = project.hasProperty('mockito.version') ? project.properties['mockito.version'] : "1.10.19"
 versions["scala"] = project.hasProperty('scala.version') ? project.properties['scala.version'] : "2.12.4"
+versions["akka"] = project.hasProperty('akka.version') ? project.properties['akka.version'] : "2.5.11"
+versions["scalatest"] = project.hasProperty('scalatest.version') ? project.properties['scalatest.version'] : "3.0.5"
 
 libs += [
+  akka: "com.typesafe.akka:akka-actor_2.12:$versions.akka",
   scala: "org.scala-lang:scala-library:$versions.scala",
   hbaseClient: "org.apache.hbase:hbase-client:$versions.hbase",
   hbaseServer: "org.apache.hbase:hbase-server:$versions.hbase",
@@ -24,7 +26,7 @@ libs += [
   hadoopHdfs: "org.apache.hadoop:hadoop-hdfs:$versions.hadoop",
   guava: "com.google.guava:guava:$versions.guava",
   directory: "org.apache.directory.server:apacheds-i18n:$versions.directory",
-  junit: "junit:junit:$versions.junit",
+  scalatest: "org.scalatest:scalatest_2.12:$versions.scalatest",
   tomcat: "tomcat:jasper-compiler:$versions.tomcat",
   mockito: "org.mockito:mockito-all:$versions.mockito"
 ]

@@ -1,13 +1,11 @@
 package com.chia7712.myscala
 
 
-
-trait Table {
-  def put(cells:Cell*)
-  def delete(key:Key*)
-  def deleteRow(row:Array[Byte]*)
-  def deleteFamily(rowFm:(Array[Byte], Array[Byte])*)
+trait Table extends Closeable {
+  def put(cells:Seq[Cell])
+  def delete(key:Seq[Key])
+  def deleteRow(row:Seq[Array[Byte]])
+  def deleteFamily(rowFm:Seq[(Array[Byte], Array[Byte])])
   def tableName:String
-  def close()
 }
 

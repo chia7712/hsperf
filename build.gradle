@@ -13,6 +13,7 @@ repositories {
 }
 
 dependencies {
+  compile libs.akka
   compile libs.scala
   compile libs.hbaseClient
   compile libs.zookeeper
@@ -21,7 +22,7 @@ dependencies {
   }
   testCompile libs.tomcat
   testCompile libs.hbaseServer
-  testCompile libs.junit
+  testCompile libs.scalatest
   testCompile libs.mockito
   testCompile "$libs.hbaseServer:tests"
   testCompile "$libs.hbaseHadoopCompat:tests"

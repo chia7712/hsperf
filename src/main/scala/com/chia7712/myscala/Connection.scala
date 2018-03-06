@@ -1,49 +1,53 @@
 package com.chia7712.myscala
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.client.{ColumnFamilyDescriptorBuilder, ConnectionFactory, Delete, Put, TableDescriptorBuilder}
+import org.apache.hadoop.hbase.client.{Admin, ColumnFamilyDescriptorBuilder, ConnectionFactory, Delete, Put, TableDescriptorBuilder}
 import org.apache.hadoop.hbase.{CellBuilderFactory, CellBuilderType, CellUtil, HBaseConfiguration, TableName}
 
 import scala.collection.JavaConverters._
+import com.chia7712.myscala.Closeable._
 
-class Connection(config:Configuration) {
+import scala.util.Try
+class Connection(config:Configuration) extends Closeable {
   private[this] val connection = ConnectionFactory.createConnection(config)
   def getTable(name:String) = {
     val tableName = TableName.valueOf(name)
+
     val table = connection.getTable(tableName)
     new Table() {
-      override def put(cells: Cell*) = {
-        val toHBaseCell = (c:Cell) => {
-          CellBuilderFactory.create(CellBuilderType.DEEP_COPY)
-            .setRow(c.key.row)
-            .setFamily(c.key.family)
-            .setQualifier(c.key.qualifier)
-            .setType(org.apache.hadoop.hbase.Cell.Type.Put)
-            .setValue(c.value)
-            .build()
-        }
-        table.put(cells.map(toHBaseCell)
+      def toCell(c:Cell) = {
+        CellBuilderFactory.create(CellBuilderType.DEEP_COPY)
+          .setRow(c.key.row)
+          .setFamily(c.key.family)
+          .setQualifier(c.key.qualifier)
+          .setType(org.apache.hadoop.hbase.Cell.Type.Put)
+          .setValue(c.value)
+          .build()
+      }
+      def toCell(key:Key) = {
+        CellBuilderFactory.create(CellBuilderType.DEEP_COPY)
+          .setRow(key.row)
+          .setFamily(key.family)
+          .setQualifier(key.qualifier)
+          .setType(org.apache.hadoop.hbase.Cell.Type.Delete)
+          .build()
+      }
+
+      override def put(cells: Seq[Cell]) = {
+        table.put(cells.map(toCell)
           .map(c => new Put(CellUtil.cloneRow(c), true).add(c)).asJava)
       }
 
-      override def delete(key: Key*) = {
-        val toHBaseCell = (key:Key) => {
-          CellBuilderFactory.create(CellBuilderType.DEEP_COPY)
-            .setRow(key.row)
-            .setFamily(key.family)
-            .setQualifier(key.qualifier)
-            .setType(org.apache.hadoop.hbase.Cell.Type.Delete)
-            .build()
-        }
-        table.delete(key.map(toHBaseCell)
+      override def delete(key: Seq[Key]) = {
+        table.delete(key.map(toCell)
           .map(c => new Delete(CellUtil.cloneRow(c)).add(c)).asJava)
       }
 
-      override def deleteRow(row:Array[Byte]*) = {
+      override def deleteRow(row:Seq[Array[Byte]]) = {
         table.delete(row.map(new Delete(_)).asJava)
       }
 
-      override def deleteFamily(rowFm: (Array[Byte], Array[Byte])*) = {
+      override def deleteFamily(rowFm:Seq[(Array[Byte], Array[Byte])]) = {
         table.delete(rowFm.map(rf => new Delete(rf._1).addFamily(rf._2)).asJava)
       }
 
@@ -53,19 +57,9 @@ class Connection(config:Configuration) {
     }
   }
 
-  def recreateTable(name:String, cfs:Array[Byte]*) = {
-    val tableName = TableName.valueOf(name)
-    val admin = connection.getAdmin
-    try {
-      if (admin.tableExists(tableName)) {
-        admin.disableTable(tableName)
-        admin.deleteTable(tableName)
-      }
-      val builder = TableDescriptorBuilder.newBuilder(tableName)
-      cfs.map(ColumnFamilyDescriptorBuilder.of).foreach(builder.addColumnFamily)
-      admin.createTable(builder.build())
-    } finally {
-      admin.close()
+  def getColumns(tableName:String) = {
+    doJavaClose(connection.getAdmin()) {
+      admin => admin.getDescriptor(TableName.valueOf(tableName)).getColumnFamilies.map(_.getName)
     }
   }
   def close() = connection.close()
@@ -73,3 +67,4 @@ class Connection(config:Configuration) {
 object Connection {
   def apply(config: Configuration = HBaseConfiguration.create()) = new Connection(config)
 }
+
