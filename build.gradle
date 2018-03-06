@@ -13,7 +13,8 @@ repositories {
 }
 
 dependencies {
-  compile libs.akka
+  compile libs.akkaActor
+  compile libs.akkaSlf4j
   compile libs.scala
   compile libs.hbaseClient
   compile libs.zookeeper

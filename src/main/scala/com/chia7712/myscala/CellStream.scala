@@ -1,21 +1,28 @@
 package com.chia7712.myscala
 
-import java.util.concurrent.{ConcurrentLinkedQueue, TimeUnit}
-
-import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
-import akka.routing.{Broadcast, RoundRobinPool}
+import akka.actor.Actor
+import akka.actor.ActorRef
+import akka.actor.ActorSystem
+import akka.actor.PoisonPill
+import akka.actor.Props
+import akka.routing.Broadcast
+import akka.routing.RoundRobinPool
 import com.chia7712.myscala.Closeable._
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import org.apache.commons.logging.LogFactory
-
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import akka.pattern.gracefulStop
 class CellStream(private[this] val tableName:String, private[this] val rowCount:Int) {
   private[this] val LOG = LogFactory.getLog(CellStream.getClass)
   private[this] var putterThread = 5
   private[this] var cellerThread = 5
   private[this] var batchSize = 50
   def withPutterThread(n:Int): this.type = {
+    PartialFunction
     putterThread = n
     this
   }
@@ -28,35 +35,48 @@ class CellStream(private[this] val tableName:String, private[this] val rowCount:
     this
   }
 
+  def createPutter(actorSystem:ActorSystem, table: => Table) = {
+    actorSystem.actorOf(RoundRobinPool(putterThread)
+      .props(Props(new Putter(table, batchSize))), "putter")
+  }
+  private[this] def createCeller(actorSystem:ActorSystem, putter:ActorRef, cfs:Array[Array[Byte]]) = {
+    actorSystem.actorOf(RoundRobinPool(cellerThread)
+      .props(Props(new Celler(putter, cfs))), "celler")
+  }
+
+  private[this] def dispatch(celler:ActorRef) = {
+    var processedCount = 0
+    val avg = rowCount / cellerThread
+    while (processedCount < rowCount) {
+      var toSend = if (rowCount > avg) avg else rowCount
+      celler ! (processedCount, processedCount + toSend)
+      processedCount += toSend
+    }
+  }
+
+  private[this] def logUntilDone(cellSum:Long) = {
+    var cellCount = 0;
+    do {
+      cellCount = CellCounter.sum
+      LOG.info(s"Total cells:$cellSum, processed:$cellCount")
+      TimeUnit.SECONDS.sleep(5)
+    } while (cellCount < cellSum)
+  }
   def run() = {
     doClose(Connection()) {
       conn => {
         val cfs = conn.getColumns(tableName)
         doFinally(ActorSystem("cellStream")) {
           actorSystem => {
-            val putter = actorSystem.actorOf(RoundRobinPool(putterThread)
-              .props(Props(new Putter(TableProxy(conn.getTable(tableName)), batchSize))), "putter")
-            val celler = actorSystem.actorOf(RoundRobinPool(cellerThread)
-              .props(Props(new Celler(putter, cfs))), "celler")
-            var processedCount = 0
-            val avg = rowCount / cellerThread
-            while (processedCount < rowCount) {
-              var toSend = if (rowCount > avg) avg else rowCount
-              celler ! (processedCount, processedCount + toSend)
-              processedCount += toSend
-            }
-            var cellCount = 0;
-            val cellSum = rowCount * cfs.length
-            do {
-              cellCount = TableProxy.sum
-              LOG.info(s"Total cells:$cellSum, processed:$cellCount")
-              TimeUnit.SECONDS.sleep(5)
-            } while (cellCount < cellSum)
+            val putter = createPutter(actorSystem, conn.getTable(tableName, CellCounter()))
+            val celler = createCeller(actorSystem, putter, cfs)
+            dispatch(celler)
+            logUntilDone(cfs.length * rowCount)
             // send a stop flag to all actors
-            celler ! Broadcast(PoisonPill)
-            putter ! Broadcast(PoisonPill)
-            actorSystem.stop(celler)
-            actorSystem.stop(putter)
+            Await.result(gracefulStop(celler, 60 minute, Broadcast(PoisonPill)), 60 minute)
+            Await.result(gracefulStop(putter, 60 minute, Broadcast(PoisonPill)), 60 minute)
+//            celler ! Broadcast(PoisonPill)
+//            putter ! Broadcast(PoisonPill)
           }
         } {
           actorSystem:ActorSystem => Await.result(actorSystem.terminate(), 60 minute)
@@ -66,7 +86,7 @@ class CellStream(private[this] val tableName:String, private[this] val rowCount:
   }
 
 
-  class Celler(val outter:ActorRef, val cfs:Array[Array[Byte]]) extends Actor {
+  private[this] class Celler(val outter:ActorRef, val cfs:Array[Array[Byte]]) extends Actor {
     override def receive = {
       case (start:Int, end:Int) => {
         for (i <- start until end) {
@@ -87,7 +107,7 @@ class CellStream(private[this] val tableName:String, private[this] val rowCount:
       case c:Cell => {
         if ((buffer += c).size >= bufferSize) {
           try {
-            table.put(buffer)
+            table.putCells(buffer)
           } finally {
             buffer.clear()
           }
@@ -99,63 +119,23 @@ class CellStream(private[this] val tableName:String, private[this] val rowCount:
       LOG.info("Putter end")
     }
   }
-  trait CellCounter {
-    def cellCount:Int
+
+  private[this] class CellCounter private extends TableObserver {
+    val count = new AtomicInteger(0)
+    override def postPutCells(cells:Seq[Cell]):Unit = {
+      count.addAndGet(cells.size)
+    }
   }
-
-  private[this] class TableProxy(val table:Table) extends Table with CellCounter {
-    var cellCount = 0
-    override def put(cells: Seq[Cell]) = {
-      try {
-        table.put(cells)
-      } finally {
-        cellCount += cells.size
-      }
-    }
-
-    override def delete(key:Seq[Key]) = {
-      try {
-        table.delete(key)
-      } finally {
-        cellCount += key.size
-      }
-    }
-
-    override def deleteRow(row:Seq[Array[Byte]]) = {
-      try {
-        table.deleteRow(row)
-      } finally {
-        cellCount += row.size
-      }
-    }
-
-    override def deleteFamily(rowFm:Seq[(Array[Byte], Array[Byte])]) = {
-      try {
-        table.deleteFamily(rowFm)
-      } finally {
-        cellCount += rowFm.size
-      }
-    }
-
-    override def tableName = table.tableName
-
-    override def close() = table.close()
-  }
-
-  private[this] object TableProxy {
+  private[this] object CellCounter {
     val COUNTERS = new ConcurrentLinkedQueue[CellCounter]
-    def sum = COUNTERS.stream().mapToInt(_.cellCount).sum
-    def apply(table:Table)  = {
-      val rval = new TableProxy(table)
-      COUNTERS.add(rval)
-      rval
+    def sum = COUNTERS.stream().mapToInt(_.count.get).sum
+    def apply() = {
+      val counter = new CellCounter
+      COUNTERS.add(counter)
+      counter
     }
   }
 }
-
-
-
-
 
 object CellStream {
   def apply(tableName:String, cellCount:Int) = new CellStream(tableName, cellCount)

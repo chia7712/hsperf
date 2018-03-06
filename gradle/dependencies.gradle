@@ -15,7 +15,8 @@ versions["akka"] = project.hasProperty('akka.version') ? project.properties['akk
 versions["scalatest"] = project.hasProperty('scalatest.version') ? project.properties['scalatest.version'] : "3.0.5"
 
 libs += [
-  akka: "com.typesafe.akka:akka-actor_2.12:$versions.akka",
+  akkaActor: "com.typesafe.akka:akka-actor_2.12:$versions.akka",
+  akkaSlf4j: "com.typesafe.akka:akka-slf4j_2.12:$versions.akka",
   scala: "org.scala-lang:scala-library:$versions.scala",
   hbaseClient: "org.apache.hbase:hbase-client:$versions.hbase",
   hbaseServer: "org.apache.hbase:hbase-server:$versions.hbase",

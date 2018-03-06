@@ -1,4 +1,5 @@
 package com.chia7712.myscala
+
 object TablePutter extends App{
   if (args.length < 2) {
     println("[OPTION] <table name> <row count> ")

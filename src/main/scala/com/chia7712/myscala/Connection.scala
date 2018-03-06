@@ -1,19 +1,21 @@
 package com.chia7712.myscala
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.client.{Admin, ColumnFamilyDescriptorBuilder, ConnectionFactory, Delete, Put, TableDescriptorBuilder}
-import org.apache.hadoop.hbase.{CellBuilderFactory, CellBuilderType, CellUtil, HBaseConfiguration, TableName}
-
-import scala.collection.JavaConverters._
 import com.chia7712.myscala.Closeable._
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hbase.client.ConnectionFactory
+import org.apache.hadoop.hbase.client.Delete
+import org.apache.hadoop.hbase.client.Put
+import org.apache.hadoop.hbase.CellBuilderFactory
+import org.apache.hadoop.hbase.CellBuilderType
+import org.apache.hadoop.hbase.CellUtil
+import org.apache.hadoop.hbase.HBaseConfiguration
+import org.apache.hadoop.hbase.TableName
+import scala.collection.JavaConverters._
 
-import scala.util.Try
 class Connection(config:Configuration) extends Closeable {
   private[this] val connection = ConnectionFactory.createConnection(config)
-  def getTable(name:String) = {
-    val tableName = TableName.valueOf(name)
-
-    val table = connection.getTable(tableName)
+  def getTable(name:String, observer:TableObserver = new TableObserver(){}) = {
+    val table = connection.getTable(TableName.valueOf(name))
     new Table() {
       def toCell(c:Cell) = {
         CellBuilderFactory.create(CellBuilderType.DEEP_COPY)
@@ -33,27 +35,44 @@ class Connection(config:Configuration) extends Closeable {
           .build()
       }
 
-      override def put(cells: Seq[Cell]) = {
-        table.put(cells.map(toCell)
-          .map(c => new Put(CellUtil.cloneRow(c), true).add(c)).asJava)
+      override def putCells(cells: Seq[Cell]) = {
+        try {
+          table.put(cells.map(toCell)
+            .map(c => new Put(CellUtil.cloneRow(c), true).add(c)).asJava)
+        } finally {
+          observer.postPutCells(cells)
+        }
+
       }
 
-      override def delete(key: Seq[Key]) = {
-        table.delete(key.map(toCell)
-          .map(c => new Delete(CellUtil.cloneRow(c)).add(c)).asJava)
+      override def deleteCells(keys: Seq[Key]) = {
+        try {
+          table.delete(keys.map(toCell)
+            .map(c => new Delete(CellUtil.cloneRow(c)).add(c)).asJava)
+        } finally {
+          observer.postDeleteCells(keys)
+        }
       }
 
-      override def deleteRow(row:Seq[Array[Byte]]) = {
-        table.delete(row.map(new Delete(_)).asJava)
+      override def deleteRows(rows:Seq[Array[Byte]]) = {
+        try {
+          table.delete(rows.map(new Delete(_)).asJava)
+        } finally {
+          observer.postDeleteRows(rows)
+        }
       }
 
-      override def deleteFamily(rowFm:Seq[(Array[Byte], Array[Byte])]) = {
-        table.delete(rowFm.map(rf => new Delete(rf._1).addFamily(rf._2)).asJava)
+      override def deleteFamilies(rowFms:Seq[(Array[Byte], Array[Byte])]) = {
+        try {
+          table.delete(rowFms.map(rf => new Delete(rf._1).addFamily(rf._2)).asJava)
+        } finally {
+          observer.postDeleteFamilies(rowFms)
+        }
       }
 
       override def close() = table.close()
 
-      override def tableName: String = name.toString
+      override def tableName: String = name
     }
   }
 

@@ -1,6 +1,8 @@
 package com.chia7712.myscala
 
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 trait Closeable {
   def close():Unit
