@@ -62,6 +62,7 @@ class CellStream(private[this] val tableName:String, private[this] val rowCount:
       TimeUnit.SECONDS.sleep(5)
     } while (cellCount < cellSum)
   }
+
   def run() = {
     doClose(Connection()) {
       conn => {
@@ -75,8 +76,6 @@ class CellStream(private[this] val tableName:String, private[this] val rowCount:
             // send a stop flag to all actors
             Await.result(gracefulStop(celler, 60 minute, Broadcast(PoisonPill)), 60 minute)
             Await.result(gracefulStop(putter, 60 minute, Broadcast(PoisonPill)), 60 minute)
-//            celler ! Broadcast(PoisonPill)
-//            putter ! Broadcast(PoisonPill)
           }
         } {
           actorSystem:ActorSystem => Await.result(actorSystem.terminate(), 60 minute)
