@@ -1,10 +1,10 @@
-package com.chia7712.myscala
+package com.chia7712.hsperf
 
 import java.io.IOException
 
 import org.junit.{Assert, Test}
 import org.scalatest.junit.AssertionsForJUnit
-import com.chia7712.myscala.Closeable._
+import com.chia7712.hsperf.Closeable._
 class TestCloseable extends AssertionsForJUnit {
 
 

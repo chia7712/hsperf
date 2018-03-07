@@ -1,4 +1,4 @@
-package com.chia7712.myscala
+package com.chia7712.hsperf
 
 import org.apache.hadoop.hbase.CellBuilderFactory
 import org.apache.hadoop.hbase.CellBuilderType

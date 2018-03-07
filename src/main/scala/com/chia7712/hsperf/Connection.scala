@@ -1,7 +1,7 @@
-package com.chia7712.myscala
+package com.chia7712.hsperf
 
-import com.chia7712.myscala.Closeable._
-import com.chia7712.myscala.CellConverter._
+import com.chia7712.hsperf.Closeable._
+import com.chia7712.hsperf.CellConverter._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.client.ConnectionFactory
 import org.apache.hadoop.hbase.client.Delete

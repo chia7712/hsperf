@@ -1,4 +1,4 @@
-package com.chia7712.myscala
+package com.chia7712.hsperf
 
 object TablePutter extends App{
   if (args.length < 2) {

@@ -1,4 +1,4 @@
-package com.chia7712.myscala
+package com.chia7712.hsperf
 
 import akka.actor.Actor
 import akka.actor.ActorRef
@@ -7,7 +7,7 @@ import akka.actor.PoisonPill
 import akka.actor.Props
 import akka.routing.Broadcast
 import akka.routing.RoundRobinPool
-import com.chia7712.myscala.Closeable._
+import com.chia7712.hsperf.Closeable._
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger

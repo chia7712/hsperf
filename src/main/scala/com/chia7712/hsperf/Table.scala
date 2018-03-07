@@ -1,4 +1,4 @@
-package com.chia7712.myscala
+package com.chia7712.hsperf
 
 trait Table extends Closeable {
   def putCells(cells:Seq[Cell])

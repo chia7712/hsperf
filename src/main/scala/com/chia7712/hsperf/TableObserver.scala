@@ -1,4 +1,4 @@
-package com.chia7712.myscala
+package com.chia7712.hsperf
 
 trait TableObserver {
   def postPutCells(cells:Seq[Cell]):Unit = {}
