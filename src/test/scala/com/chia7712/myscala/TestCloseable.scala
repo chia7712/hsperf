@@ -7,30 +7,9 @@ import org.scalatest.junit.AssertionsForJUnit
 import com.chia7712.myscala.Closeable._
 class TestCloseable extends AssertionsForJUnit {
 
-  @Test
-  def testDoCloseWithApply() {
-    showName(new MyObject("name1"))
-    showName(MyObject("name1"))
-    Assert.assertEquals(2, MyObject.COUNT)
-  }
-  private[this] def showName(f: => MyObject) {
-    println(f.name)
-    println(f.name)
-  }
-  private[this] class MyObject(val name:String) {
-    // empty
-  }
-
-  private[this] object MyObject {
-    var COUNT = 0
-    def apply(name:String) = {
-      COUNT += 1
-      new MyObject(name)
-    }
-  }
 
   @Test
-  def testDoClose() {
+  def testDoClose() = {
     def invalidString():Closeable = throw new IOException("IOE")
     try {
       doClose(invalidString)(_ => true)
@@ -48,5 +27,14 @@ class TestCloseable extends AssertionsForJUnit {
       case _:IOException => {}
     }
     Assert.assertTrue(doFinally(validString)(_ => true)(_ => {}))
+
+  }
+
+  trait MyObject {
+    def name():String
+  }
+  implicit def asMyObject(s:String):MyObject = {
+    println("implicit")
+    () => s
   }
 }

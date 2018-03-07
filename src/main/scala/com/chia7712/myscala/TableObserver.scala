@@ -6,3 +6,7 @@ trait TableObserver {
   def postDeleteRows(row:Seq[Array[Byte]]):Unit = {}
   def postDeleteFamilies(rowFm:Seq[(Array[Byte], Array[Byte])]):Unit = {}
 }
+
+object TableObserver {
+  val DUMMY = new TableObserver(){}
+}
