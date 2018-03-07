@@ -27,14 +27,5 @@ class TestCloseable extends AssertionsForJUnit {
       case _:IOException => {}
     }
     Assert.assertTrue(doFinally(validString)(_ => true)(_ => {}))
-
-  }
-
-  trait MyObject {
-    def name():String
-  }
-  implicit def asMyObject(s:String):MyObject = {
-    println("implicit")
-    () => s
   }
 }

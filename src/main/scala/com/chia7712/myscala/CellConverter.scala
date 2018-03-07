@@ -30,7 +30,7 @@ object CellConverter {
   }
   def toPut(cell:Cell):Put = {
     val hcell = toPutCell(cell)
-    new Put(hcell.getRowArray, true).add(hcell)
+    new Put(CellUtil.cloneRow(hcell), true).add(hcell)
   }
   def toDelete(key:Key):Delete = {
     val hcell = toDeleteCell(key)

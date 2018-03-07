@@ -10,7 +10,7 @@ trait Cell extends Ordered[Cell] {
     }
   }
   override def compare(that:Cell) = key.compare(that.key)
-  override def toString = key.toString + "/" + ByteUtil.toString(value)
+  override def toString = key.toString + "/" + ByteConverter.toString(value)
 }
 object Cell {
   def apply(k:Key, v:Array[Byte]) = {

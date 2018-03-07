@@ -89,9 +89,9 @@ class CellStream(private[this] val tableName:String, private[this] val rowCount:
     override def receive = {
       case (start:Int, end:Int) => {
         for (i <- start until end) {
-          val row = ByteUtil.toBytes(i)
-          val value = ByteUtil.toBytes(i)
-          val qualifier = ByteUtil.toBytes(i)
+          val row = ByteConverter.toBytes(i.toString)
+          val value = ByteConverter.toBytes(i.toString)
+          val qualifier = ByteConverter.toBytes(i.toString)
           cfs.foreach(cf => outter ! Cell(Key(row, cf, qualifier), value))
         }
       }
