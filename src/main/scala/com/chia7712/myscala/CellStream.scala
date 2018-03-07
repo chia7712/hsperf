@@ -57,9 +57,9 @@ class CellStream(private[this] val tableName:String, private[this] val rowCount:
   private[this] def logUntilDone(cellSum:Long) = {
     var cellCount = 0;
     do {
+      TimeUnit.SECONDS.sleep(5)
       cellCount = CellCounter.sum
       LOG.info(s"Total cells:$cellSum, processed:$cellCount")
-      TimeUnit.SECONDS.sleep(5)
     } while (cellCount < cellSum)
   }
 
