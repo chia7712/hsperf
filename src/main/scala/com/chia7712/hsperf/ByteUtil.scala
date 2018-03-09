@@ -5,7 +5,7 @@ import org.apache.hadoop.hbase.util.Bytes
 /**
   * A wrap to HBase Bytes util
   */
-object ByteConverter {
+object ByteUtil {
   def toShort(v:Array[Byte]) = Bytes.toShort(v)
   def toInt(v:Array[Byte]) = Bytes.toInt(v)
   def toLong(v:Array[Byte]) = Bytes.toLong(v)

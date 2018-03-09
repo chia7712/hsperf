@@ -10,8 +10,8 @@ import org.apache.hadoop.hbase.{Cell => HCell}
 /**
   * DON'T make the methods be implicit since the conversion is expensive
   */
-object CellConverter {
-  def toPutCell(c:Cell):HCell = {
+object KeyValueUtil {
+  def toPutCell(c:KeyValue):HCell = {
     CellBuilderFactory.create(CellBuilderType.DEEP_COPY)
       .setRow(c.key.row)
       .setFamily(c.key.family)
@@ -28,7 +28,7 @@ object CellConverter {
       .setType(org.apache.hadoop.hbase.Cell.Type.Delete)
       .build()
   }
-  def toPut(cell:Cell):Put = {
+  def toPut(cell:KeyValue):Put = {
     val hcell = toPutCell(cell)
     new Put(CellUtil.cloneRow(hcell), true).add(hcell)
   }
@@ -39,7 +39,7 @@ object CellConverter {
   def toKey(c:HCell):Key = {
     Key(CellUtil.cloneRow(c), CellUtil.cloneFamily(c), CellUtil.cloneQualifier(c))
   }
-  def toCell(c:HCell):Cell = {
-    Cell(toKey(c), CellUtil.cloneValue(c))
+  def toCell(c:HCell):KeyValue = {
+    KeyValue(toKey(c), CellUtil.cloneValue(c))
   }
 }

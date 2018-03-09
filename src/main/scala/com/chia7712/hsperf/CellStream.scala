@@ -7,7 +7,7 @@ import akka.actor.PoisonPill
 import akka.actor.Props
 import akka.routing.Broadcast
 import akka.routing.RoundRobinPool
-import com.chia7712.hsperf.Closeable._
+import com.chia7712.hsperf.CloseableUtil._
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -89,10 +89,10 @@ class CellStream(private[this] val tableName:String, private[this] val rowCount:
     override def receive = {
       case (start:Int, end:Int) => {
         for (i <- start until end) {
-          val row = ByteConverter.toBytes(i.toString)
-          val value = ByteConverter.toBytes(i.toString)
-          val qualifier = ByteConverter.toBytes(i.toString)
-          cfs.foreach(cf => outter ! Cell(Key(row, cf, qualifier), value))
+          val row = ByteUtil.toBytes(i.toString)
+          val value = ByteUtil.toBytes(i.toString)
+          val qualifier = ByteUtil.toBytes(i.toString)
+          cfs.foreach(cf => outter ! KeyValue(Key(row, cf, qualifier), value))
         }
       }
       case _ => LOG.info("Celler recevie garbage...")
@@ -101,9 +101,9 @@ class CellStream(private[this] val tableName:String, private[this] val rowCount:
   }
 
   private[this] class Putter(val table:Table, bufferSize:Int) extends Actor {
-    private[this] val buffer = new ArrayBuffer[Cell](bufferSize)
+    private[this] val buffer = new ArrayBuffer[KeyValue](bufferSize)
     override def receive = {
-      case c:Cell => {
+      case c:KeyValue => {
         if ((buffer += c).size >= bufferSize) {
           try {
             table.putCells(buffer)
@@ -121,7 +121,7 @@ class CellStream(private[this] val tableName:String, private[this] val rowCount:
 
   private[this] class CellCounter private extends TableObserver {
     val count = new AtomicInteger(0)
-    override def postPutCells(cells:Seq[Cell]):Unit = {
+    override def postPutCells(cells:Seq[KeyValue]):Unit = {
       count.addAndGet(cells.size)
     }
   }

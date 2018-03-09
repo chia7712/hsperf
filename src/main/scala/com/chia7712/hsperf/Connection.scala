@@ -1,7 +1,8 @@
 package com.chia7712.hsperf
 
-import com.chia7712.hsperf.Closeable._
-import com.chia7712.hsperf.CellConverter._
+import com.chia7712.hsperf.CloseableUtil._
+import com.chia7712.hsperf.KeyValueUtil._
+import java.io.Closeable
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.client.ConnectionFactory
 import org.apache.hadoop.hbase.client.Delete
@@ -15,7 +16,7 @@ class Connection(config:Configuration) extends Closeable {
     val table = connection.getTable(TableName.valueOf(name))
     new Table() {
 
-      override def putCells(cells: Seq[Cell]) = {
+      override def putCells(cells: Seq[KeyValue]) = {
         try {
           table.put(cells.map(toPut).asJava)
         } finally {
@@ -55,7 +56,7 @@ class Connection(config:Configuration) extends Closeable {
   }
 
   def getColumns(tableName:String) = {
-    doJavaClose(connection.getAdmin()) {
+    doClose(connection.getAdmin()) {
       admin => admin.getDescriptor(TableName.valueOf(tableName)).getColumnFamilies.map(_.getName)
     }
   }

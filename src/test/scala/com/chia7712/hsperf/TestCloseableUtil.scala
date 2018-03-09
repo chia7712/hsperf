@@ -1,11 +1,11 @@
 package com.chia7712.hsperf
 
 import java.io.IOException
-
 import org.junit.{Assert, Test}
 import org.scalatest.junit.AssertionsForJUnit
-import com.chia7712.hsperf.Closeable._
-class TestCloseable extends AssertionsForJUnit {
+import com.chia7712.hsperf.CloseableUtil._
+import java.io.Closeable
+class TestCloseableUtil extends AssertionsForJUnit {
 
 
   @Test
